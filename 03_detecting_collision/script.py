@@ -1,11 +1,4 @@
 """
-3D Ball Collision Demo with Multiple Detection Algorithms
-Methods:
- - brute : Brute-force O(n^2)
- - sap   : Sweep and Prune
- - bvh   : Bounding Volume Hierarchy
-
-Usage:
     python collisions_3d.py --method brute
     python collisions_3d.py --method sap
     python collisions_3d.py --method bvh
@@ -19,7 +12,6 @@ from OpenGL.GLU import *
 import random, math, sys, time, argparse
 import numpy as np
 
-# ---------- settings ----------
 SCREEN_W, SCREEN_H = 1000, 700
 NUM_BALLS = 1000
 RADIUS = 0.2
@@ -27,7 +19,6 @@ MAX_SPEED = 2.0
 BOX_SIZE = 10.0
 FPS = 60
 
-# ---------- Ball class ----------
 class Ball:
     __slots__ = ("x","y","z","vx","vy","vz","r","colliding")
     def __init__(self, x, y, z, vx, vy, vz, r=RADIUS):
@@ -37,7 +28,6 @@ class Ball:
         self.colliding = False
     def pos(self): return (self.x, self.y, self.z)
 
-# ---------- Helpers ----------
 def dist2(a: Ball, b: Ball):
     dx = a.x - b.x; dy = a.y - b.y; dz = a.z - b.z
     return dx*dx + dy*dy + dz*dz
@@ -55,7 +45,7 @@ def make_balls(n):
         balls.append(Ball(x,y,z,vx,vy,vz,RADIUS))
     return balls
 
-# ---------- Broadphase Algorithms ----------
+#  1 zad Algorithms 
 
 def detect_collisions_bruteforce(balls):
     n = len(balls)
@@ -87,7 +77,7 @@ def detect_collisions_sweep_and_prune(balls):
         active.append((start, end, b))
     return collisions
 
-# ---- BVH ----
+#  BVH 
 class BVHNode:
     def __init__(self, balls):
         self.balls = balls
@@ -139,7 +129,7 @@ def detect_collisions_bvh(balls):
     root = build_bvh(balls)
     return traverse_bvh(root, root)
 
-# ---------- Simulation ----------
+#  Simulation 
 def step(balls, dt, method_fn):
     for b in balls:
         b.x += b.vx * dt; b.y += b.vy * dt; b.z += b.vz * dt
@@ -155,7 +145,7 @@ def step(balls, dt, method_fn):
     print(f"Collisions={c:5d}  |  Time per frame={ (t1-t0)*1000:.3f} ms", end="\r")
     return c
 
-# ---------- Rendering ----------
+#  Rendering 
 def draw_ball(b):
     glPushMatrix()
     glTranslatef(b.x - BOX_SIZE/2, b.y - BOX_SIZE/2, b.z - BOX_SIZE/2)
@@ -176,7 +166,7 @@ def draw_box(size):
                 glVertex3f(-half,y,z); glVertex3f(half,y,z)
     glEnd()
 
-# ---------- Main ----------
+#  Main 
 def run_visual(method_fn):
     pygame.init()
     pygame.display.set_mode((SCREEN_W, SCREEN_H), DOUBLEBUF|OPENGL)
@@ -205,7 +195,7 @@ def run_headless(method_fn, steps=200):
         step(balls, 1/FPS, method_fn)
     print("\nDone.")
 
-# ---------- Entry ----------
+#  Entry 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--method", choices=["brute","sap","bvh"], default="brute")
