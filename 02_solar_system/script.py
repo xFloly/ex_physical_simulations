@@ -52,7 +52,7 @@ class Vector2:
 
 class PhysicsScene:
     def __init__(self):
-        self.gravity: Vector2 = Vector2(3.0, -10.0)
+        self.gravity: Vector2 = Vector2(0.0, -10.0)
         self.dt: float = 1.0 / 60.0
         self.numSteps: int = 100
         self.paused: bool = True
@@ -80,17 +80,49 @@ class Bead:
         self.prevPos.set(self.pos)
         self.pos.add(self.vel, dt)
 
-    def keepOnWire(self, center: Vector2, radius: float) -> float:
+    # def keepOnWire(self, center: Vector2, radius: float) -> float:
+    #     dir = Vector2()
+    #     dir.subtractVectors(self.pos, center)
+    #     length = dir.length()
+    #     if length == 0.0:
+    #         return Vector2()
+    #     dir.scale(1.0 / length)
+    #     lam = radius - length
+    #     self.pos.add(dir, lam)
+    #     return dir.scale(lam / (physicsScene.dt * physicsScene.dt)) 
+    #     # return lam
+
+    def keepOnWire(self, center: Vector2, radius: float) -> Vector2:
         dir = Vector2()
         dir.subtractVectors(self.pos, center)
         length = dir.length()
         if length == 0.0:
             return Vector2()
-        dir.scale(1.0 / length)
-        lam = radius - length
-        self.pos.add(dir, lam)
-        return dir.scale(lam / (physicsScene.dt * physicsScene.dt)) 
-        # return lam
+
+        n = dir.clone().scale(1.0 / length)
+
+        # C(p) = |p - center| - r
+        C = length - radius
+
+        # w_i = 1 / m_i 
+        w_i = 1.0 / self.mass
+
+        # w_c = 1 / m_c
+        # jak środek ma m = inf, to w_c = 0 (Eq. (8))
+        w_c = 0.0 if physicsScene.centerMass == float('inf') else 1.0 / physicsScene.centerMass
+
+        # Eq. (8) 
+        s = C / (w_i + w_c)
+
+        # Eq. (9)
+        self_correction = n.clone().scale(-s * w_i)
+        self.pos.add(self_correction)
+
+        if physicsScene.centerMass != float('inf'):
+            center_correction = n.clone().scale(s * w_c)
+            physicsScene.wireCenter.add(center_correction)
+
+        return self_correction.clone().scale(-1.0 / (physicsScene.dt * physicsScene.dt))
 
     def endStep(self, dt: float) -> None:
         self.vel.subtractVectors(self.pos, self.prevPos)
@@ -168,11 +200,11 @@ def simulate():
                 total_reaction.add(lam_vec)
                 bead_forces[i] = lam_vec.length() / (sdt * sdt)
 
-        if physicsScene.centerMass != float('inf'):
-            # F = m a => a = F/m
-            acc = total_reaction.clone().scale(-1.0 / physicsScene.centerMass)
-            physicsScene.wireVelocity.add(acc, sdt)
-            physicsScene.wireCenter.add(physicsScene.wireVelocity, sdt)
+        # if physicsScene.centerMass != float('inf'):
+        #     # F = m a => a = F/m
+        #     acc = total_reaction.clone().scale(-1.0 / physicsScene.centerMass)
+        #     physicsScene.wireVelocity.add(acc, sdt)
+        #     physicsScene.wireCenter.add(physicsScene.wireVelocity, sdt)
 
 
         # for i, bead in enumerate(physicsScene.beads):
