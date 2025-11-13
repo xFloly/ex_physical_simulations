@@ -20,11 +20,12 @@ BOX_SIZE = 10.0
 FPS = 60
 
 class Ball:
-    __slots__ = ("x","y","z","vx","vy","vz","r","colliding")
     def __init__(self, x, y, z, vx, vy, vz, r=RADIUS):
         self.x, self.y, self.z = x, y, z
         self.vx, self.vy, self.vz = vx, vy, vz
         self.r = r
+        self.left = self.x - self.r
+        self.right = self.x + self.r
         self.colliding = False
     def pos(self): return (self.x, self.y, self.z)
 
@@ -60,21 +61,25 @@ def detect_collisions_bruteforce(balls):
     return collisions
 
 def detect_collisions_sweep_and_prune(balls):
-    # sort by x-min
-    intervals = [(b.x - b.r, b.x + b.r, b) for b in balls]
-    intervals.sort(key=lambda x: x[0])
-    active = []
+    for b in balls:
+        b.left = b.x - b.r
+        b.right = b.x + b.r
+
+    balls.sort(key=lambda b: b.left)
+
     collisions = 0
-    for start, end, b in intervals:
-        # remove ended intervals
-        active = [a for a in active if a[1] > start]
-        # check with active
-        for _, _, a in active:
-            if abs(a.y - b.y) < a.r + b.r and abs(a.z - b.z) < a.r + b.r:
+
+    for i in range(len(balls)):
+        a = balls[i]
+        for j in range(i + 1, len(balls)):
+            b = balls[j]
+            if b.left > a.right:
+                break
+            if abs(a.y - b.y) <= a.r + b.r and abs(a.z - b.z) <= a.r + b.r:
                 if dist2(a, b) < (a.r + b.r)**2:
                     a.colliding = b.colliding = True
                     collisions += 1
-        active.append((start, end, b))
+
     return collisions
 
 #  BVH 
